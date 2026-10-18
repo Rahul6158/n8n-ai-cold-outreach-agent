@@ -1,0 +1,22 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment and sensitive keys
+.env
+*.env.local
+*.secret
+credentials.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo

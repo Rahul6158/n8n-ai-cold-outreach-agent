@@ -1,0 +1,424 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1rZ3SYEZTT9hAbHcOZX6UKjPZWSUYS4Xbi_sw1mUiRoE",
+          "mode": "list",
+          "cachedResultName": "HR_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rZ3SYEZTT9hAbHcOZX6UKjPZWSUYS4Xbi_sw1mUiRoE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rZ3SYEZTT9hAbHcOZX6UKjPZWSUYS4Xbi_sw1mUiRoE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        3632
+      ],
+      "id": "4c4f99a0-929f-4d79-9490-0359a2a65d3d",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pcRKYhX8HkSdisEb",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5bec4433-1128-42c9-8114-19472923e254",
+              "leftValue": "={{ String($json.Email || $json.email || $json['Email Address'] || $json['email address'] || $json['Email ID'] || $json['email id'] || $json['E-mail'] || $json['e-mail'] || Object.entries($json || {}).find(([k]) => /email|e-mail/i.test(k.trim()))?.[1] || Object.values($json || {}).find(v => typeof v === 'string' && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v.trim())) || '').trim() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "not-sent-check",
+              "leftValue": "={{ String($json.Status || $json.status || $json['Email Status'] || $json['email status'] || '').trim().toLowerCase() }}",
+              "rightValue": "sent",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "75895f92-20e9-4126-a2fb-cc433e9acb36",
+      "name": "Has Recipient Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        3632
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Limit number of emails per execution (recommended: 30-50 per run to protect Gmail reputation)\nconst DAILY_LIMIT = 100;\nreturn $input.all().slice(0, DAILY_LIMIT);"
+      },
+      "id": "41ff69e2-aa29-4de8-89d2-ee6178a76be1",
+      "name": "Limit Daily Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        3632
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "cb5133bc-b0af-48e7-a8b9-6f1dfc838c7f",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1648,
+        3632
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ 'Write a personalized opening hook for an outreach email to ' + (($json.Name || $json.name || '').trim().split(/\\s+/)[0] || 'there') + ' (' + ($json.Title || $json.title || 'Hiring Manager') + ' at ' + ($json.Company || $json.company || 'your company') + ').\\n\\n' + 'Target Info:\\n' + '- Recipient Name: ' + (($json.Name || $json.name || '').trim().split(/\\s+/)[0] || 'there') + '\\n' + '- Recipient Title: ' + ($json.Title || $json.title || 'Hiring Manager') + '\\n' + '- Target Company: ' + ($json.Company || $json.company || 'your company') + '\\n\\n' + 'Instructions:\\n' + '1. Subject Line: Applied AI Role / Question about ' + ($json.Company || $json.company || 'your company') + '’s AI Roadmap\\n' + '2. Personalized Hook: Exactly 1-2 sentences showing you have been following ' + ($json.Company || $json.company || 'your company') + '’s recent work in productionizing Generative AI, engineering challenges, or intelligent workflows.\\n' + '3. Do NOT include greetings, body paragraphs, bullets, CTA, or signatures. Only write the tailored opening hook.\\n\\n' + 'Return ONLY valid JSON (no markdown formatting, no code fences):\\n' + '{\\n  \"subject\": \"Applied AI Role / Question about ' + ($json.Company || $json.company || 'your company') + '’s AI Roadmap\",\\n  \"hook\": \"I’ve been following ' + ($json.Company || $json.company || 'your company') + '’s recent work in productionizing Generative AI, especially your team’s focus on scaling intelligent production workflows.\"\\n}' }}",
+        "options": {
+          "systemMessage": "You are an executive outreach strategist for Tusha Rahul Bellamkonda, an Applied AI Engineer.\n\nYour task is to write a single compelling, personalized 1-2 sentence opening hook for a cold email to a tech leader.\nThe hook must show that Tusha follows their company's recent work, engineering milestones, or AI initiatives (such as productionizing LLMs, scaling RAG pipelines, or autonomous workflows).\n\nFormatting and Style Guidelines:\n- Always output pure, valid JSON with string keys \"subject\" and \"hook\". Never wrap the JSON in Markdown code fences.\n- Tone: Confident, crisp, engineering-driven, and polite.\n- Do NOT write the entire email, bullets, CTA, or signature — only generate the tailored subject and opening hook."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1872,
+        3504
+      ],
+      "id": "cab91835-b851-4aee-a693-87bdf3beb739",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Robust contact resolver that never breaks even across AI Agent\nlet source = {};\ntry {\n  const loopNode = $('Loop Over Items');\n  const runIndex = loopNode.context?.currentRunIndex;\n  const contacts = $('Limit Daily Batch').all();\n  if (contacts && typeof runIndex === 'number' && contacts[runIndex]) {\n    source = contacts[runIndex].json;\n  }\n} catch (e) {}\n\nif (!source || !source.Email) {\n  try {\n    source = $('Loop Over Items').item.json;\n  } catch (e) {}\n}\n\nif (!source || !source.Email) {\n  try {\n    source = $('Has Recipient Email').item.json;\n  } catch (e) {}\n}\n\nif (!source || !source.Email) {\n  source = $json;\n}\n\nconst raw = $json.output ?? $json.text ?? $json.response ?? $json.message?.content ?? '';\nlet parsed = null;\nconst rawStr = typeof raw === 'string' ? raw : JSON.stringify(raw);\n\ntry {\n  const cleanedJsonStr = rawStr.trim().replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/, '');\n  parsed = JSON.parse(cleanedJsonStr);\n} catch (e) {\n  const match = rawStr.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    try {\n      parsed = JSON.parse(match[0]);\n    } catch (e2) {\n      const subjMatch = rawStr.match(/\"subject\"\\s*:\\s*\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"/i);\n      const hookMatch = rawStr.match(/\"(?:hook|intro|opening)\"\\s*:\\s*\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"/i);\n      const bodyMatch = rawStr.match(/\"(?:body|message)\"\\s*:\\s*\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"/i);\n      if (subjMatch || hookMatch || bodyMatch) {\n        parsed = {\n          subject: subjMatch ? subjMatch[1].replace(/\\\\n/g, '\\n').replace(/\\\\\"/g, '\"') : '',\n          hook: hookMatch ? hookMatch[1].replace(/\\\\n/g, '\\n').replace(/\\\\\"/g, '\"') : '',\n          body: bodyMatch ? bodyMatch[1].replace(/\\\\n/g, '\\n').replace(/\\\\\"/g, '\"') : ''\n        };\n      }\n    }\n  }\n}\n\nconst recipientEmail = (source.Email || source.email || source['Email Address'] || source['email address'] || source['Email ID'] || source['email id'] || Object.entries(source || {}).find(([k]) => /email|e-mail/i.test(k.trim()))?.[1] || Object.values(source || {}).find(v => typeof v === 'string' && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v.trim())) || '').trim();\nconst recipientName = (source.Name || source.name || '').trim();\nconst firstName = recipientName.split(/\\s+/)[0] || 'there';\nconst company = (source.Company || source.company || '').trim();\nconst title = (source.Title || source.title || 'Hiring Manager').trim();\n\n// 1. Dynamic Subject Line with Company Name\nlet subject = parsed && typeof parsed.subject === 'string' ? parsed.subject.trim() : '';\nsubject = subject.replace(/^[\\\"']|[\\\"']$/g, '').replace(/\\[[^\\]]*\\]/g, '').replace(/[-–—\\s]+$/, '').trim();\nif (company) {\n  subject = subject.replace(/\\b(?:the|your)\\s+company\\b/gi, company);\n}\nif (!subject || /^opportunities at/i.test(subject) || /^job application/i.test(subject) || /^application/i.test(subject) || subject.includes('[') || subject.length < 10) {\n  subject = company ? `Applied AI Role / Question about ${company}’s AI Roadmap` : 'Applied AI Role / Question about your AI Roadmap';\n}\n\n// 2. Extract and Refactor Personalized Hook\nlet personalizedHook = '';\n\nif (parsed && typeof parsed.hook === 'string' && parsed.hook.trim()) {\n  personalizedHook = parsed.hook.trim();\n} else if (parsed && typeof (parsed.body || parsed.message) === 'string' && (parsed.body || parsed.message).trim()) {\n  const candidateBody = (parsed.body || parsed.message).trim();\n  const hookMatch = candidateBody.match(/(?:I’ve|I've|I\\s+have\\s+been|I’m|I'm)\\s+(?:following|particularly\\s+interested\\s+in|admiring)[^.!?]*[.!?]/i);\n  if (hookMatch) {\n    personalizedHook = hookMatch[0].trim();\n  }\n} else if (rawStr && !rawStr.startsWith('{')) {\n  const hookMatch = rawStr.match(/(?:I’ve|I've|I\\s+have\\s+been|I’m|I'm)\\s+(?:following|particularly\\s+interested\\s+in|admiring)[^.!?]*[.!?]/i);\n  if (hookMatch) {\n    personalizedHook = hookMatch[0].trim();\n  }\n}\n\n// Clean and sanitize hook\nif (personalizedHook) {\n  personalizedHook = personalizedHook.replace(/^[\\\"']|[\\\"']$/g, '').replace(/\\b(?:the|your)\\s+company\\b/gi, company || 'your team').trim();\n  personalizedHook = personalizedHook.replace(/^(?:Hi|Hello|Hey)\\s+[^,]+,\\s*/i, '');\n  personalizedHook = personalizedHook.replace(/^My name is[^.]*\\.\\s*/i, '');\n}\n\n// Fallback high-converting hook if model didn't provide one\nif (!personalizedHook || personalizedHook.length < 20) {\n  personalizedHook = company\n    ? `I’ve been following ${company}’s recent work in productionizing Generative AI, especially your team’s focus on scaling intelligent production workflows.`\n    : `I’ve been following your team’s recent work in productionizing Generative AI and scaling intelligent production workflows.`;\n}\n\n// 3. Assemble Master Template (links on separate lines)\nconst PORTFOLIO_URL = 'https://tusharahul.netlify.app';\nconst RESUME_URL = 'https://drive.google.com/file/d/1LdWTaK1wir3d-tAdkDc52F7LEc7cELtl/view?usp=sharing';\nconst GITHUB_URL = 'https://github.com/Rahul6158';\nconst LINKEDIN_URL = 'https://linkedin.com/in/tusha-rahul';\nconst FULL_NAME = 'Tusha Rahul Bellamkonda';\n\nconst emailBody = [\n  `Hi ${firstName},`,\n\n  personalizedHook,\n\n  `I’m an Applied AI Engineer specializing in taking AI concepts and shipping them into reliable production applications. At my current role, I recently:\\n• Optimized a multi-tenant RAG platform, boosting retrieval accuracy from 58% to 85% using HNSW Hybrid search.\\n• Built a Text-to-SQL Agent for complex data analytics that cut query creation times by 40%.`,\n\n  `I’d love to learn more about the engineering challenges your team is tackling next. Do you have 15 minutes for a brief chat this week?`,\n\n  `Best,\\n${FULL_NAME}\\nApplied AI Engineer\\nPortfolio: ${PORTFOLIO_URL}\\nResume: ${RESUME_URL}\\nGitHub: ${GITHUB_URL}\\nLinkedIn: ${LINKEDIN_URL}`\n].join('\\n\\n');\n\nreturn [{\n  json: {\n    ...source,\n    Email: recipientEmail,\n    email: recipientEmail,\n    Name: recipientName,\n    Company: company,\n    Title: title,\n    emailSubject: subject,\n    emailBody: emailBody\n  }\n}];"
+      },
+      "id": "5882bcf4-8eac-44c6-8492-109f6b883043",
+      "name": "Parse Email Draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        3504
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email || $json.email }}",
+        "subject": "={{ $json.emailSubject }}",
+        "emailType": "text",
+        "message": "={{ $json.emailBody }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "7e56219e-7ef7-4614-8682-e3eb3c5a7b16",
+      "name": "Send Outreach Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2448,
+        3504
+      ],
+      "webhookId": "e7812648-7135-40dd-a6ac-e09a7f58ef61",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MbgtUHAitJ8SZttB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1rZ3SYEZTT9hAbHcOZX6UKjPZWSUYS4Xbi_sw1mUiRoE",
+          "mode": "list",
+          "cachedResultName": "HR_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rZ3SYEZTT9hAbHcOZX6UKjPZWSUYS4Xbi_sw1mUiRoE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rZ3SYEZTT9hAbHcOZX6UKjPZWSUYS4Xbi_sw1mUiRoE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Limit Daily Batch').all()[$('Loop Over Items').context.currentRunIndex].json.row_number }}",
+            "Status": "Sent"
+          },
+          "matchingColumns": [
+            "row_number"
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2672,
+        3504
+      ],
+      "id": "ca73a3b9-5543-42cb-88ea-5fcf42013c12",
+      "name": "Mark Row as Sent",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pcRKYhX8HkSdisEb",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1226194697249436",
+        "recipientPhoneNumber": "+916304747097",
+        "textBody": "={{ 'OUTREACH EMAIL SENT\\n\\nRecipient: ' + ($('Limit Daily Batch').all()[$('Loop Over Items').context.currentRunIndex]?.json.Name || $('Parse Email Draft').first().json.Name || '') + ' <' + ($('Limit Daily Batch').all()[$('Loop Over Items').context.currentRunIndex]?.json.Email || $('Parse Email Draft').first().json.Email || '') + '>\\n' + 'Title: ' + ($('Limit Daily Batch').all()[$('Loop Over Items').context.currentRunIndex]?.json.Title || $('Parse Email Draft').first().json.Title || '') + '\\n' + 'Company: ' + ($('Limit Daily Batch').all()[$('Loop Over Items').context.currentRunIndex]?.json.Company || $('Parse Email Draft').first().json.Company || '') + '\\n\\n' + 'Subject: ' + ($('Parse Email Draft').first().json.emailSubject || $('Parse Email Draft').item.json.emailSubject || '') + '\\n\\n' + 'Email content:\\n' + ($('Parse Email Draft').first().json.emailBody || $('Parse Email Draft').item.json.emailBody || '') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        2896,
+        3504
+      ],
+      "id": "32f27f0a-b4da-41a1-9e87-151572907489",
+      "name": "WhatsApp Confirmation",
+      "webhookId": "5f3889cc-f87b-4481-8a7c-07a18040ee81",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "wAjgVzpgvuc0PaFS",
+          "name": "WhatsApp account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "position": [
+        3120,
+        3632
+      ],
+      "id": "499ecd8b-05c7-4951-b163-0dfbbdda191d",
+      "name": "Wait Between Emails",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "webhookId": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:1b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        3680
+      ],
+      "id": "e9946003-2f15-4914-a92f-71d01bb07396",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "sHUMOcMY82jpT2yn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        736,
+        3632
+      ],
+      "id": "dd5dc713-685e-44dc-a788-0513211dc4f1",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "connections": {
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Has Recipient Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Recipient Email": {
+      "main": [
+        [
+          {
+            "node": "Limit Daily Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit Daily Batch": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Email Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Email Draft": {
+      "main": [
+        [
+          {
+            "node": "Send Outreach Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Outreach Email": {
+      "main": [
+        [
+          {
+            "node": "Mark Row as Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Row as Sent": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Wait Between Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Between Emails": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "45281cceade8d5ed7eb85e51f2c925bab32aa2f12c6de2fb2f7fdc9ea0b0bbe4"
+  }
+}

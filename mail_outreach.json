@@ -1,0 +1,293 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        3936,
+        2256
+      ],
+      "id": "1f60cd31-ee66-4991-b6d1-27019c488e30",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1rZ3SYEZTT9hAbHcOZX6UKjPZWSUYS4Xbi_sw1mUiRoE",
+          "mode": "list",
+          "cachedResultName": "HR_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rZ3SYEZTT9hAbHcOZX6UKjPZWSUYS4Xbi_sw1mUiRoE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rZ3SYEZTT9hAbHcOZX6UKjPZWSUYS4Xbi_sw1mUiRoE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4160,
+        2256
+      ],
+      "id": "13eedbcc-c0eb-41c6-8b8f-1c7c65a4eb3f",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pcRKYhX8HkSdisEb",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5bec4433-1128-42c9-8114-19472923e254",
+              "leftValue": "={{ String($json.Email || '').trim() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3312314b-7186-406a-85ec-af2226e997b9",
+      "name": "Has Recipient Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4384,
+        2256
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ 'You are Tusha Rahul Bellamkonda, an Applied AI Engineer.\\nWrite a short, sweet, formal, and catchy cold outreach email to ' + (($json.Name || '').trim().split(' ')[0] || 'there') + ' (' + ($json.Title || 'Talent Acquisition') + ' at ' + ($json.Company || 'your company') + ').\\n\\nTool directive:\\n- First, use the \"Search the web in Tavily\" tool to search: \"' + ($json.Company || 'company') + ' recent news AI cloud engineering projects\".\\n- Identify 1 specific recent milestone, client project, or core tech focus to use in your opening hook.\\n\\nCore requirements:\\n- Keep it SHORT & SWEET (under 65 words for the body).\\n- Focus entirely on what you can SOLVE and BUILD for ' + ($json.Company || 'their team') + ', NOT on what you need.\\n- Step 1 (Specific Hook): 1 sentence referencing their recent milestone or core tech focus discovered from search.\\n- Step 2 (Quantified Value): 1-2 sentences highlighting how you solve production AI challenges (e.g. improved enterprise RAG retrieval accuracy from 58% to 85% for 50+ users, and automated data pipelines cutting query times by 40% with Python and FastAPI).\\n- Step 3 (Low-friction CTA): 1 sentence asking if they are open to a brief 10-minute chat next week to explore how you can help accelerate their AI roadmap.\\n\\nRules:\\n- NEVER say \"I am looking for a job\", \"I need an opportunity\", \"My name is\", or \"I hope this email finds you well\".\\n- Never use bracket placeholders like [insert milestone] or [Your Name].\\n- Tone: Formal, polite, confident, and punchy.\\n\\nReturn ONLY valid JSON with two string keys: \"subject\" and \"body\".\\nExample format:\\n{\\n  \"subject\": \"Accelerating AI initiatives at ' + ($json.Company || 'your company') + ' — Tusha\",\\n  \"body\": \"Hi ' + (($json.Name || '').trim().split(' ')[0] || 'there') + ',\\\\n\\\\nI\\'ve been following ' + ($json.Company || 'your company') + '\\'s recent work in scaling intelligent cloud solutions and wanted to reach out directly.\\\\n\\\\nAs teams deploy LLMs into production, retrieval accuracy and latency often become the main bottlenecks. In my work as an Applied AI Engineer, I built an enterprise RAG platform that improved retrieval accuracy from 58% to 85% for 50+ users, and automated data pipelines with Python and FastAPI cutting query times by 40%.\\\\n\\\\nWould you be open to a brief 10-minute chat next week to explore how I could help accelerate your team\\'s AI roadmap?\"\\n}' }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        4640,
+        2256
+      ],
+      "id": "4283d620-21a6-4c8e-be00-39d511561d0e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:1b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        4640,
+        2480
+      ],
+      "id": "4ee78433-c437-4959-a113-03d16b08378e",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "sHUMOcMY82jpT2yn",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $('Has Recipient Email').item.json;\nconst raw = $json.output ?? $json.text ?? $json.response ?? $json.message?.content ?? '';\nlet parsed = null;\nconst rawStr = typeof raw === 'string' ? raw : JSON.stringify(raw);\n\ntry {\n  const cleanedJsonStr = rawStr.trim().replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/, '');\n  parsed = JSON.parse(cleanedJsonStr);\n} catch (e) {\n  const match = rawStr.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    try {\n      parsed = JSON.parse(match[0]);\n    } catch (e2) {\n      const subjMatch = rawStr.match(/\"subject\"\\s*:\\s*\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"/i);\n      const bodyMatch = rawStr.match(/\"(?:body|message)\"\\s*:\\s*\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"/i);\n      if (subjMatch && bodyMatch) {\n        parsed = {\n          subject: subjMatch[1].replace(/\\\\n/g, '\\n').replace(/\\\\\"/g, '\"'),\n          body: bodyMatch[1].replace(/\\\\n/g, '\\n').replace(/\\\\\"/g, '\"')\n        };\n      }\n    }\n  }\n}\n\nconst recipientName = (source.Name || '').trim();\nconst firstName = recipientName.split(/\\s+/)[0] || 'there';\nconst company = (source.Company || '').trim();\nconst compFirstWord = company.split(/\\s+/)[0].toLowerCase();\n\nlet subject = parsed && typeof parsed.subject === 'string' ? parsed.subject.trim() : '';\nlet body = parsed && typeof (parsed.body || parsed.message) === 'string' ? (parsed.body || parsed.message).trim() : '';\n\nif (!body) {\n  body = rawStr.replace(/^[^{]*\\{/, '{').trim();\n}\n\nsubject = subject.replace(/^[\\\"']|[\\\"']$/g, '').replace(/\\[[^\\]]*\\]/g, '').replace(/[-–—\\s]+$/, '').trim();\nif (!subject || /^opportunities at/i.test(subject) || /^job application/i.test(subject) || /^application/i.test(subject) || subject.length < 5) {\n  subject = company ? `Accelerating AI initiatives at ${company} — Tusha` : 'Accelerating Applied AI initiatives — Tusha';\n} else if (company && compFirstWord && !subject.toLowerCase().includes(compFirstWord)) {\n  subject = `${subject} — ${company}`;\n}\n\nlet cleanBody = body.replace(/^[\\\"']|[\\\"']$/g, '').trim();\ncleanBody = cleanBody.replace(/^```(?:json|markdown|text)?\\s*/i, '').replace(/\\s*```$/, '').trim();\n\nconst greetingRegex = /^(?:Dear|Hi|Hello|Hey)\\s+[^,\\n]+[,:]/i;\nconst nameOnlyGreetingRegex = new RegExp(`^${firstName}[,:]`, 'i');\n\nif (greetingRegex.test(cleanBody)) {\n  cleanBody = cleanBody.replace(greetingRegex, `Hi ${firstName},`);\n} else if (nameOnlyGreetingRegex.test(cleanBody)) {\n  cleanBody = cleanBody.replace(nameOnlyGreetingRegex, `Hi ${firstName},`);\n} else {\n  cleanBody = `Hi ${firstName},\\n\\n` + cleanBody;\n}\n\ncleanBody = cleanBody.replace(/(Hi\\s+[^,\\n]+,\\s*\\n+)(?:My name('s| is)[^,\\n]+,?\\s*\\n*)/i, '$1');\ncleanBody = cleanBody.replace(/(Hi\\s+[^,\\n]+,\\s*\\n+)(?:Hope you('re| are) having a [^.!?\\n]+[.!?]\\s*|Wow,?\\s*[^.!?\\n]+[.!?]\\s*)/i, '$1');\n\ncleanBody = cleanBody.replace(/\\[[^\\]]*\\]/gi, '');\ncleanBody = cleanBody.replace(/(?:To that effect,?\\s*)?(?:I've included my resume|You can find my links|find them on the links below|links below|check out my links)[^.\\n]*[.\\n]?/gi, '');\ncleanBody = cleanBody.replace(/The following is my signature:?/gi, '');\ncleanBody = cleanBody.replace(/(?:\\n|^)\\s*(?:Sincerely|Best regards|Best|Warm regards|Regards|Thanks|Cheers),?\\s*\\n*.*$/is, '');\ncleanBody = cleanBody.replace(/[\\s\\d\\p{Extended_Pictographic}\\u200d\\uFE0F\\uFE0E]+$/gu, '').trim();\ncleanBody = cleanBody.replace(/[”\\\"']+$/, '').trim();\ncleanBody = cleanBody.replace(/Tusha\\s+Rahul\\s+Bellamkond[oa]/gi, 'Tusha Rahul Bellamkonda');\n\ncleanBody = cleanBody.split('\\n').map(l => l.trim()).filter(Boolean).join('\\n\\n');\n\nconst RESUME_URL = 'https://drive.google.com/file/d/1LdWTaK1wir3d-tAdkDc52F7LEc7cELtl/view?usp=sharing';\nconst PORTFOLIO_URL = 'https://tusharahul.netlify.app';\nconst LINKEDIN_URL = 'https://linkedin.com/in/tusha-rahul';\nconst GITHUB_URL = 'https://github.com/Rahul6158';\nconst PHONE_NUMBER = '+91 6304747097';\nconst FULL_NAME = 'Tusha Rahul Bellamkonda';\n\nconst linksAndSignature = [\n  'My portfolio & profiles for review:',\n  `• Portfolio: ${PORTFOLIO_URL}`,\n  `• LinkedIn: ${LINKEDIN_URL}`,\n  `• Resume: ${RESUME_URL}`,\n  `• GitHub: ${GITHUB_URL}`,\n  '',\n  'Best regards,',\n  FULL_NAME,\n  'Applied AI Engineer',\n  PHONE_NUMBER\n].join('\\n');\n\nconst finalBody = cleanBody + '\\n\\n' + linksAndSignature;\n\nreturn [{\n  json: {\n    ...source,\n    emailSubject: subject,\n    emailBody: finalBody\n  }\n}];"
+      },
+      "id": "8781b2b4-56d4-4594-9f71-9957c4bf074e",
+      "name": "Parse Email Draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4896,
+        2256
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "={{ $json.emailSubject }}",
+        "emailType": "text",
+        "message": "={{ $json.emailBody }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "9c5b9ecf-2ccb-48f0-ad40-67c718a63957",
+      "name": "Send Outreach Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        5120,
+        2256
+      ],
+      "webhookId": "e7812648-7135-40dd-a6ac-e09a7f58ef61",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MbgtUHAitJ8SZttB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1226194697249436",
+        "recipientPhoneNumber": "+916304747097",
+        "textBody": "={{ 'OUTREACH EMAIL SENT\\n\\nRecipient: ' + ($('Parse Email Draft').item.json.Name || '') + ' <' + $('Parse Email Draft').item.json.Email + '>\\nTitle: ' + ($('Parse Email Draft').item.json.Title || '') + '\\nCompany: ' + ($('Parse Email Draft').item.json.Company || '') + '\\n\\nSubject: ' + $('Parse Email Draft').item.json.emailSubject + '\\n\\nEmail content:\\n' + $('Parse Email Draft').item.json.emailBody }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        5360,
+        2256
+      ],
+      "id": "8484287b-e975-4fb0-bea1-9eb8db4b5033",
+      "name": "WhatsApp Confirmation",
+      "webhookId": "5f3889cc-f87b-4481-8a7c-07a18040ee81",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "wAjgVzpgvuc0PaFS",
+          "name": "WhatsApp account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 2,
+      "position": [
+        4784,
+        2480
+      ],
+      "id": "bcc9068b-0bfa-4608-80fc-4307595c3cbe",
+      "name": "Search the web in Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "Ak1exrRwSubBINhn",
+          "name": "Tavily account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Has Recipient Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Recipient Email": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Email Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Email Draft": {
+      "main": [
+        [
+          {
+            "node": "Send Outreach Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Outreach Email": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search the web in Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "45281cceade8d5ed7eb85e51f2c925bab32aa2f12c6de2fb2f7fdc9ea0b0bbe4"
+  }
+}
